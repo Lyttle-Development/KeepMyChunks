@@ -2,6 +2,7 @@ name: KeepMyChunks
 version: '${project.version}'
 main: com.lyttldev.keepmychunks.KeepMyChunks
 api-version: '1.20'
+depend: [KeepChunks]
 commands:
     keepmychunks:
         usage: /keepmychunks

@@ -3,12 +3,11 @@ package com.lyttldev.keepmychunks.utils;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import com.lyttldev.keepmychunks.KeepMyChunks;
-import com.lyttldev.keepmychunks.types.ConfigEntry;
+import com.lyttldev.keepmychunks.types.LocationEntry;
 import org.bukkit.Bukkit;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 
 public class Locations {
@@ -16,25 +15,25 @@ public class Locations {
     private static final Gson gson = new Gson();
 
     // set empty array as default value
-    public static ConfigEntry[] data;
+    public static LocationEntry[] data;
 
     public static void init() {
         read();
     }
     private static boolean noLocationOnInit = false;
 
-    public static void add(double x, double z, String world) {
-        ConfigEntry[] newData = new ConfigEntry[data.length + 1];
+    public static void add(double x, double y, double z, String world) {
+        LocationEntry[] newData = new LocationEntry[data.length + 1];
         System.arraycopy(data, 0, newData, 0, data.length);
-        newData[data.length] = new ConfigEntry(x, z, world);
+        newData[data.length] = new LocationEntry(x, y, z, world);
         data = newData;
         write(gson.toJson(data));
     }
 
-    public static void remove(double x, double z, String world) {
+    public static void remove(double x, double y, double z, String world) {
         for (int i = 0; i < data.length; i++) {
-            if (data[i].x == x && data[i].z == z && data[i].world.equals(world)) {
-                ConfigEntry[] newData = new ConfigEntry[data.length - 1];
+            if (data[i].x == x && data[i].z == z && data[i].y == y && data[i].world.equals(world)) {
+                LocationEntry[] newData = new LocationEntry[data.length - 1];
                 System.arraycopy(data, 0, newData, 0, i);
                 System.arraycopy(data, i + 1, newData, i, data.length - i - 1);
                 data = newData;
@@ -104,7 +103,7 @@ public class Locations {
             isReader = new InputStreamReader(new FileInputStream(crunchifyFile), StandardCharsets.UTF_8);
 
             JsonReader myReader = new JsonReader(isReader);
-            ConfigEntry[] locations = gson.fromJson(myReader, ConfigEntry[].class);
+            LocationEntry[] locations = gson.fromJson(myReader, LocationEntry[].class);
 
             Logger.info("Locations: " + locations.toString());
             data = locations;
