@@ -24,10 +24,10 @@ public class CheckLocations {
 
 
     // Range to keep chunks loaded:
-    protected static float checkRange = 3;
+    protected static float checkRange = 60;
 
     // Range to detect other keep location loaders:
-    protected static float detectRange = 10;
+    protected static float detectRange = 120;
 
     // Amount in tokens:
     protected static int tokensPerLocationAmount = 1;
@@ -40,8 +40,6 @@ public class CheckLocations {
      */
     private static void checkLocations() {
         try {
-            Bukkit.getLogger().info("=========================================");
-
             // Reset all cache's back to empty.
             cleanup();
 
@@ -53,17 +51,19 @@ public class CheckLocations {
 
             // Get all keep locations where a player is located.
             getPlayerKeepLocations(playerLocations);
-            Bukkit.getLogger().info("keepLocationsInPlayerRange: " + keepLocationsInPlayerRange.size());
+//            Bukkit.getLogger().info("keepLocationsInPlayerRange: " + keepLocationsInPlayerRange.size());
 
             // Get all keep locations that are nearby another keep chunk, where a player is located.
             getAllNearbyKeepLocations();
-            Bukkit.getLogger().info("keepLocations: " + keepLocations.size());
+//            Bukkit.getLogger().info("keepLocations: " + keepLocations.size());
 
             cleanupEnabledKeepLocations();
 
             //
             notifyPlayersInsideKeepLocations();
-            Bukkit.getLogger().info("playersInKeepChunk: " + playersInKeepChunk.size());
+//            Bukkit.getLogger().info("playersInKeepChunk: " + playersInKeepChunk.size());
+
+            runKeepChunksCommands();
         } catch (Exception e) {
             Bukkit.getLogger().info("Error: " + e);
         }
@@ -189,10 +189,6 @@ public class CheckLocations {
     }
 
     private static void notifyPlayersInsideKeepLocations() {
-        for (LocationEnabledEntry loc : enabledKeepLocations.values()) {
-            Bukkit.getLogger().info("enabledKeepLocation: " + loc.enabled + ", " + loc.x + ", " + loc.y + ", " + loc.z + ", " + loc.world);
-        }
-
         try {
             // Get online players
             Collection<? extends Player> players = Bukkit.getOnlinePlayers();
@@ -238,16 +234,13 @@ public class CheckLocations {
         for (LocationEntry keepLocation : Locations.data) {
             String key = getLocationHashMapKey(keepLocation);
             LocationCheckEntry enabledKeepLocation = keepLocations.get(key);
-            Bukkit.getLogger().info("AAAA" +  key + " - " + ((enabledKeepLocation == null) ? "null" : "not null"));
             if (enabledKeepLocation != null && enabledKeepLocation.enabled) {
                 continue;
             }
 
             if (isLocationInRange(player.getLocation(), keepLocation, checkRange)) {
                 Map<String, LocationCheckEntry> locations = getByOneNearbyKeepLocations(keepLocation.toLocationCheckEntry(false));
-                Bukkit.getLogger().info("SIZE" + locations.size());
                 for (LocationCheckEntry location : locations.values()) {
-                    Bukkit.getLogger().info("XYZ" + location.x + " " + location.y + " " + location.z);
                     String locationKey = getLocationHashMapKey(location.toLocationEntry());
                     location.enabled = true;
                     enabledKeepLocations.put(locationKey, location.toLocationEnabledEntry(player.getName()));
@@ -270,5 +263,36 @@ public class CheckLocations {
         }
 
         return true;
+    }
+
+    private static String getCommandCoords(LocationEntry location) {
+        return Math.round(location.x - checkRange) + " " + Math.round(location.z - checkRange) + " " + Math.round(location.x + checkRange) + " " + Math.round(location.z + checkRange) + " " + location.world;
+    }
+
+    private static void runKeepChunksCommands() {
+        for (LocationCheckEntry keepLocation : keepLocations.values()) {
+            try {
+                if (keepLocation.enabled) {
+                    String command = "keepchunks keepregion coords " + getCommandCoords(keepLocation.toLocationEntry());
+                    Console.run(command);
+                }
+            } catch (Exception e) {
+                // TODO: create global console logger
+                Bukkit.getLogger().info("Error keeping chunk X: " + keepLocation.x + ", Z: " + keepLocation.z + "\nError:" + e.getMessage());
+            }
+        }
+        for (LocationEntry keepLocation : Locations.data) {
+            try {
+                String key = getLocationHashMapKey(keepLocation);
+                if (keepLocations.containsKey(key)) {
+                    continue;
+                }
+                String command = "keepchunks releaseregion coords " + getCommandCoords(keepLocation);
+                Console.run(command);
+            } catch (Exception e) {
+                // TODO: create global console logger
+                Bukkit.getLogger().info("Error keeping chunk X: " + keepLocation.x + ", Z: " + keepLocation.z + "\nError:" + e.getMessage());
+            }
+        }
     }
 }

@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Schedules {
     public static void init() {
-        createSchedule(CheckLocations.check, 5);
+        createSchedule(CheckLocations.check, 15);
     }
 
     private static void createSchedule(Runnable runnable, int seconds) {
